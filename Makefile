@@ -1,7 +1,7 @@
 # Nuts & Bolts 64 - top-level build
 #
-#   ./tools/setup.sh            (once)
-#   make BASEROM=your_rom.z64   -> build/nutsandbolts64.z64
+#   ./tools/setup.sh                          (once)
+#   make BASEROM="path/to/Banjo-Kazooie.z64"   -> build/nutsandbolts64.z64
 #
 # Options:
 #   NB_UNLOCK_ALL=1   start with every part unlocked (sandbox mode)
@@ -9,6 +9,10 @@
 #   TEST_MAP=0x27     boot straight into a level (testing only)
 
 BASEROM ?= baserom.us.v10.z64
+
+# Don't leak our command-line variables (BASEROM in particular, which the
+# decomp's Makefile also defines) into the sub-makes; pass what they need explicitly.
+MAKEOVERRIDES :=
 DECOMP  := decomp
 BUILD   := build
 OUT     := $(BUILD)/nutsandbolts64.z64
@@ -41,11 +45,10 @@ $(shell mkdir -p $(DECOMP)/build $(BUILD)/mod; \
 
 all: $(OUT)
 
-$(DECOMP)/baserom.us.v10.z64: | $(BASEROM)
-	$(PYTHON) tools/prepare_rom.py $(BASEROM) $@
-
-$(BASEROM):
-	@echo "Missing ROM: pass your Banjo-Kazooie USA v1.0 ROM with make BASEROM=path/to/rom" && false
+# BASEROM may contain spaces/parentheses (quote it on the command line) or be a
+# Windows path like 'C:\Users\me\Banjo-Kazooie (USA).z64' when building under WSL.
+$(DECOMP)/baserom.us.v10.z64:
+	$(PYTHON) tools/prepare_rom.py "$(BASEROM)" $@
 
 decomp: $(DECOMP)/baserom.us.v10.z64
 	@git -C $(DECOMP) apply --reverse --check ../patches/0001-nutsandbolts64-hooks.patch 2>/dev/null || \

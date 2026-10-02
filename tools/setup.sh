@@ -25,4 +25,4 @@ fi
 python3 -c "import PIL" 2>/dev/null || python3 -m pip install --user pillow
 
 command -v cargo >/dev/null || echo "NOTE: install Rust (https://rustup.rs) - the decomp's ROM tools need cargo"
-echo "setup done. Now: make BASEROM=/path/to/Banjo-Kazooie_USA.z64"
+echo "setup done. Now: make BASEROM=\"/path/to/Banjo-Kazooie (USA).z64\"   (quote the path; Banjo-Kazooie USA v1.0, not Tooie)"

@@ -107,14 +107,28 @@ or build with `NB_UNLOCK_ALL=1`.
 ## Building (Linux / WSL)
 
 ```sh
+cd ~                           # build in your Linux home, not /mnt/c (see below)
 git clone --recursive https://github.com/jlpt/nutsandbolts64.git
 cd nutsandbolts64
 ./tools/setup.sh --deps        # apt packages, submodules, hook patch, Python venv
 # also install Rust (https://rustup.rs) for the decomp's ROM tools, and: pip install pillow
-make BASEROM=/path/to/Banjo-Kazooie_USA.z64
+make BASEROM="/mnt/c/Users/you/Downloads/Banjo-Kazooie (USA).z64"
 ```
 
-The output is `build/nutsandbolts64.z64`. Build options:
+The output is `build/nutsandbolts64.z64`.
+
+**Windows / WSL tips**
+- The ROM must be **Banjo-Kazooie** USA v1.0, not Banjo-Tooie. The build names the game it
+  was given if it's the wrong one.
+- **Quote the ROM path.** Without quotes, bash chokes on spaces and parentheses like `(USA)`.
+  Windows drives live under `/mnt/c/...` in WSL. A quoted `'C:\Users\...'` path also
+  works: it's converted for you.
+- Clone and build in your Linux home folder (`cd ~`), not under `/mnt/c`. The decomp
+  compiles thousands of files, and the Windows filesystem is much slower from WSL. To copy
+  the finished ROM to Windows, run
+  `cp build/nutsandbolts64.z64 /mnt/c/Users/you/Desktop/`.
+
+Build options:
 
 | Option | Effect |
 |---|---|
