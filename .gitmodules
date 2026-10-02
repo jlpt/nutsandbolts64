@@ -1,3 +1,4 @@
 [submodule "decomp"]
 	path = decomp
 	url = https://github.com/n64decomp/banjo-kazooie.git
+	ignore = dirty
