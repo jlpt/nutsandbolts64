@@ -25,6 +25,9 @@ s32  player_isStable(void);
 s32  player_inWater(void);
 u32  player_getTransformation(void);
 s32  player_isDead(void);
+s32  player_is_present(void);
+s32  level_get(void);
+#define LEVEL_D_CUTSCENE 0xD
 s32  bs_getState(void);
 void bs_setState(s32 state);
 s32  bs_getIdleState(void);
@@ -106,6 +109,7 @@ BKCollisionTriangle *mapModel_intersectLine(f32 start[3], f32 end[3], f32 normal
 /* ---- items ---- */
 s32  item_getCount(s32 item);
 void item_dec(s32 item);
+void item_set(s32 item, s32 val);
 s32  item_empty(s32 item);
 #define ITEM_D_EGGS         0xD
 #define ITEM_26_JIGGY_TOTAL 0x26

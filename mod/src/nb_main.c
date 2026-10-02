@@ -111,10 +111,11 @@ void cam_lookAt(f32 eye[3], f32 target[3]) {
 static void cam_collide(f32 target[3], f32 eye[3]) {
     f32 end[3], n[3];
     v3_copy(end, eye);
-    if (func_80320B98(target, end, n, 0x9E0000) != NULL) {
+    if (func_80320B98(target, end, n, NB_FLOOR_FLAGS) != NULL) {
         f32 d[3];
         v3_sub(d, target, end);
-        v3_addScaled(end, d, 0.12f);
+        v3_addScaled(end, d, 0.15f);
+        v3_addScaled(end, n, 12.0f);
         v3_copy(eye, end);
     }
 }
@@ -156,8 +157,14 @@ void cam_driveUpdate(f32 dt) {
 /* ------------------------------------------------------------------ */
 /* modes                                                               */
 
+/* Banjo is in a real level and under the player's control */
+static s32 playerInGame(void) {
+    return player_is_present() && level_get() != 0 && level_get() != LEVEL_D_CUTSCENE;
+}
+
 static s32 canBuildHere(void) {
-    return player_getTransformation() == TRANSFORM_1_BANJO
+    return playerInGame()
+        && player_getTransformation() == TRANSFORM_1_BANJO
         && player_isStable()
         && !player_inWater()
         && !player_isDead()
@@ -239,6 +246,7 @@ static void normal_update(f32 dt) {
     f32 ppos[3], d[3];
     s32 near = FALSE;
 
+    if (!playerInGame()) return;
     playerPosition_get(ppos);
     if (nbVeh.active) {
         v3_sub(d, ppos, nbVeh.x);
@@ -352,6 +360,9 @@ static void nb_update(void) {
     if (gsworld_getMap() != sMap) {
         resetAll();
         sMap = gsworld_getMap();
+#ifdef NB_DEBUG
+        item_set(ITEM_D_EGGS, 50); /* debug builds: eggs to test the cannon */
+#endif
     }
 
     dt = nb_clampf(time_getDelta(), 0.0f, 0.1f);
@@ -416,6 +427,7 @@ static void nb_update(void) {
         nb_strcat(dbg, " V"); nb_itoa(num, (s32)nbVeh.speed); nb_strcat(dbg, num);
         nb_strcat(dbg, " T"); nb_itoa(num, (s32)(nbVeh.throttle * 100)); nb_strcat(dbg, num);
         nb_strcat(dbg, " UP"); nb_itoa(num, (s32)(nbVeh.ax[1][1] * 100)); nb_strcat(dbg, num);
+        nb_strcat(dbg, " WTR"); nb_itoa(num, nbVeh.inWater ? (s32)nbVeh.waterY : -1); nb_strcat(dbg, num);
         hud_queueText(12, 64, dbg, 120, 255, 120);
     }
 #endif

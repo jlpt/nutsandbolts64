@@ -28,11 +28,14 @@ DECOMP_CFLAGS :=
 ifneq ($(TEST_MAP),)
 DECOMP_CFLAGS += -DNB_TEST_BOOTMAP=$(TEST_MAP)
 endif
+ifneq ($(TEST_EXIT),)
+DECOMP_CFLAGS += -DNB_TEST_EXIT=$(TEST_EXIT)
+endif
 
 # rebuild what depends on these flags when they change
 $(shell mkdir -p $(DECOMP)/build $(BUILD)/mod; \
 	echo '$(DECOMP_CFLAGS)' | cmp -s - $(DECOMP)/build/nb_cflags.stamp || \
-	(echo '$(DECOMP_CFLAGS)' > $(DECOMP)/build/nb_cflags.stamp; touch $(DECOMP)/src/core1/code_0.c); \
+	(echo '$(DECOMP_CFLAGS)' > $(DECOMP)/build/nb_cflags.stamp; touch $(DECOMP)/src/core1/code_0.c $(DECOMP)/src/core2/code_5C870.c); \
 	echo '$(MOD_CFLAGS)' | cmp -s - $(BUILD)/mod/cflags.stamp || \
 	(echo '$(MOD_CFLAGS)' > $(BUILD)/mod/cflags.stamp; touch mod/src/*.c))
 

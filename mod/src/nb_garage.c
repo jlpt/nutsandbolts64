@@ -188,6 +188,16 @@ static void tryPlace(void) {
     }
 }
 
+/* a preset can be loaded once every part in it is unlocked */
+static s32 presetLocked(s32 preset) {
+    static NBBlueprint tmp;
+    s32 i;
+    preset_build(preset, &tmp);
+    for (i = 0; i < tmp.count; i++)
+        if (!nb_partUnlocked(tmp.parts[i].type)) return TRUE;
+    return FALSE;
+}
+
 static const char *loadName(s32 i) {
     static char buf[16];
     if (i < NUM_SLOTS) {
@@ -235,6 +245,11 @@ static void menuUpdate(void) {
             }
             nbBlueprint = nbSlots[g->menuBlueprint];
         } else {
+            if (presetLocked(g->menuBlueprint - NUM_SLOTS)) {
+                nb_message("COLLECT MORE JIGGIES FIRST!", 1.8f);
+                gcsfx_playWithPitch(SFX_CE_PAUSEMENU_HOIP, 0.7f, 22000);
+                break;
+            }
             preset_build(g->menuBlueprint - NUM_SLOTS, &nbBlueprint);
         }
         nb_message("BLUEPRINT LOADED!", 1.5f);
@@ -286,7 +301,10 @@ static void hud(void) {
             char *l = sLine[i];
             nb_strcpy(l, i == g->menuSel ? "- " : "  ");
             nb_strcat(l, items[i]);
-            if (i == MENU_LOAD) nb_strcat(l, loadName(g->menuBlueprint));
+            if (i == MENU_LOAD) {
+                nb_strcat(l, loadName(g->menuBlueprint));
+                if (g->menuBlueprint >= NUM_SLOTS && presetLocked(g->menuBlueprint - NUM_SLOTS)) nb_strcat(l, " (LOCKED)");
+            }
             if (i == MENU_SAVE) nb_strcat(l, loadName(g->menuSaveSlot));
             if (i == MENU_SANDBOX) nb_strcat(l, nbSandbox ? "PARTS: ALL (SANDBOX)" : "PARTS: BY JIGGIES");
             if (i == g->menuSel) hud_queueText(62, 76 + i * 14, l, 255, 255, 255);
@@ -305,7 +323,10 @@ static void hud(void) {
         nb_strcpy(sLine[1], "LOCKED - NEEDS ");
         nb_itoa(num, d->unlock);
         nb_strcat(sLine[1], num);
-        nb_strcat(sLine[1], " JIGGIES");
+        nb_strcat(sLine[1], " JIGGIES (HAVE ");
+        nb_itoa(num, item_getCount(ITEM_26_JIGGY_TOTAL));
+        nb_strcat(sLine[1], num);
+        nb_strcat(sLine[1], ")");
         hud_queueText(16, 30, sLine[1], 255, 90, 70);
     } else {
         nb_strcpy(sLine[1], "WT ");
@@ -439,7 +460,7 @@ void garage_camera(f32 dt) {
         {
             f32 end[3], n[3];
             v3_copy(end, eye);
-            if (func_80320B98(t2, end, n, 0x9E0000) != NULL) {
+            if (func_80320B98(t2, end, n, NB_FLOOR_FLAGS) != NULL) {
                 f32 d[3];
                 v3_sub(d, t2, end);
                 v3_addScaled(end, d, 0.1f);

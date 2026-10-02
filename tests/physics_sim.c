@@ -258,6 +258,9 @@ int main(void) {
     run(v, 10.0f, 0, 0, 0);
     report("10s", v);
     check(height(v) > 250.0f && height(v) < 1300.0f, "hovers at a sensible height");
+    run(v, 6.0f, BTN_A, 0, 0);
+    report("6s propeller", v);
+    check(v->speed > 150.0f && v->speed < 700.0f, "cruises along at airship speed");
     check(v->ax[1][1] > 0.9f, "stays level");
 
     printf("== TROLLEY: drop + upside-down recovery ==\n");
@@ -278,6 +281,20 @@ int main(void) {
     run(v, 4.0f, BTN_A, 0, 0);
     report("into the cliff", v);
     check(v->x[0] > -4060.0f, "doesn't pass through the wall");
+
+    printf("== KAZOOIE KART: full-speed crash ==\n");
+    v = spawn(1, 2000, 0, -2000, -90);
+    run(v, 1.0f, 0, 0, 0);
+    run(v, 6.0f, BTN_A, 0, 0);
+    report("after the crash", v);
+    {
+        s32 i, broken = 0, debris = 0;
+        for (i = 0; i < nbBlueprint.count; i++) broken += v->broken[i];
+        for (i = 0; i < MAX_DEBRIS; i++) debris += nbDebris[i].active;
+        printf("    %d parts broke off, %d debris pieces flying\n", broken, debris);
+        check(broken > 0, "a hard crash knocks parts off");
+        check(v->active && v->valid && v->x[0] > -4060.0f, "vehicle survives (seat never breaks) and stays out of the wall");
+    }
 
     {
         s32 before;

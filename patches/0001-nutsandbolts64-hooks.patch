@@ -146,7 +146,7 @@ index 3c194d3..1f62b7f 100644
 +    if (gNBLoaded) NB_HEADER->map_unload();
 +}
 diff --git a/src/core2/code_5C870.c b/src/core2/code_5C870.c
-index 411af64..225751e 100644
+index 411af64..128c2f1 100644
 --- a/src/core2/code_5C870.c
 +++ b/src/core2/code_5C870.c
 @@ -5,6 +5,7 @@
@@ -173,7 +173,19 @@ index 411af64..225751e 100644
      }
  
      printbuffer_draw(gfx, mtx, vtx);
-@@ -517,6 +520,7 @@ bool game_update(void) {
+@@ -411,7 +414,11 @@ void game_init(enum map_e map_id){
+     level_load(map_id);
+     gcsection_setJiggyListForMap(map_id);
+     func_802E3854();
++#ifdef NB_TEST_EXIT
++    game_loadMap(map_id, NB_TEST_EXIT, 0); /* test builds only */
++#else
+     game_loadMap(map_id, 0, 0);
++#endif
+     sGameState.unk0 = 0;
+     game_setMode(GAME_MODE_3_NORMAL,1);
+ }
+@@ -517,6 +524,7 @@ bool game_update(void) {
          sGameState.unk1A = 0;
      }
      sp1C = gsworld_update();
@@ -181,7 +193,7 @@ index 411af64..225751e 100644
      func_80321C34();
      func_8030ED0C();
      coMusicPlayer_update();
-@@ -546,6 +550,7 @@ bool game_update(void) {
+@@ -546,6 +554,7 @@ bool game_update(void) {
                  && volatileflag_func_8032056C()
                  && levelSpecificFlags_validateCRC1()
                  && volatileflag_stub2()

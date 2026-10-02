@@ -21,7 +21,7 @@ NBDebris nbDebris[MAX_DEBRIS];
 #define PROP_K       30000.0f
 #define JET_K        16000.0f
 #define LIFT_K       0.03f
-#define CAMBER_K     0.0062f
+#define CAMBER_K     0.0090f
 #define FIN_K        0.03f
 #define BALLOON_LIFT 8.0f
 #define FLOAT_LIFT   9.0f
@@ -672,6 +672,7 @@ static void simulate(NBVehicle *v, f32 h, s32 doHull) {
         amt = t->jet ? boost : v->throttle;
         if (amt == 0.0f) continue;
         if (!t->jet && amt < 0) amt *= 0.5f;
+        if (!t->jet) amt *= nb_clampf(1.0f - v3_dot(v->v, fwd) / 2600.0f, 0.25f, 1.0f);
         vehicle_localToWorld(v, t->pos, pw);
         localDirToWorld(v, t->dir, dir);
         v3_scale(tmp, dir, t->force * amt);
@@ -689,6 +690,12 @@ static void simulate(NBVehicle *v, f32 h, s32 doHull) {
         fade = nb_clampf(1.0f - (hgt - 350.0f) / 700.0f, 0.0f, 1.0f);
         if (v->driving && (nbIn.held & BTN_B)) fade *= 0.4f;    /* vent */
         if (v->driving && (nbIn.held & BTN_A) && v->numProps == 0) fade = 1.0f;
+        /* balloons are big and draggy */
+        {
+            f32 sp = v3_len(v->v);
+            v3_scale(tmp, v->v, -sp * 0.0045f * v->numBalloons * GRAVITY / 100.0f);
+            v3_add(sF, sF, tmp);
+        }
         for (i = 0; i < v->numBalloons; i++) {
             f32 pw[3];
             vehicle_localToWorld(v, v->balloons[i], pw);
@@ -736,6 +743,11 @@ static void simulate(NBVehicle *v, f32 h, s32 doHull) {
             f32 target = -v->steer * nb_clampf(fs / 450.0f, -1.0f, 1.0f) * 1.6f;
             f32 tq = (target - yawRate) * v->inertia[1] * 3.0f;
             v3_addScaled(sT, up, tq);
+            /* take-off rotation: winged craft lift their nose ~6 degrees at speed */
+            if (v->numWings > 0 && fs > 550.0f && v->throttle > 0.5f) {
+                f32 want = 0.10f - nbIn.sy * 0.08f;
+                v3_addScaled(sT, v->ax[0], -(want - fwd[1]) * v->inertia[0] * 10.0f);
+            }
         } else {
             /* rate control in the air: the stick asks for a pitch/roll rate and
              * letting go damps the rotation. Wings and fins give more authority. */
@@ -941,7 +953,11 @@ void vehicle_step(NBVehicle *v, f32 dt) {
     if (v->hornCooldown > 0) v->hornCooldown -= dt;
 
     /* upside down / lost / fallen out of the world */
-    if (v->ax[1][1] < 0.2f && v->speed < 200.0f) v->upsideTime += dt; else v->upsideTime = 0;
+    /* upside down, or wedged on its side/nose and not going anywhere */
+    if ((v->ax[1][1] < 0.2f && v->speed < 200.0f) || (v->ax[1][1] < 0.6f && v->speed < 60.0f && v->onGround))
+        v->upsideTime += dt;
+    else
+        v->upsideTime = 0;
     if (v->onGround || v->inWater) {
         v->airTime = 0;
         v->safeTimer += dt;
