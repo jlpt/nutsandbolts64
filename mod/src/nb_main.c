@@ -356,6 +356,7 @@ static void drive_update(f32 dt) {
 /* hooks                                                               */
 
 static void resetAll(void) {
+    if (nbMode == MODE_GARAGE) player_setModelVisible(TRUE);
     vehicle_despawn(&nbVeh);
     nbGarage.active = FALSE;
     nbMode = MODE_NORMAL;
