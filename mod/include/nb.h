@@ -36,7 +36,7 @@ enum nb_category_e {
 enum nb_kind_e {
     KIND_BLOCK, KIND_WHEEL, KIND_ENGINE, KIND_FUEL, KIND_SEAT, KIND_PROP,
     KIND_JET, KIND_WING, KIND_FIN, KIND_FLOATER, KIND_BALLOON, KIND_SPRING,
-    KIND_CANNON, KIND_HORN, KIND_LIGHT, KIND_DECOR, KIND_SKI, KIND_TREAD
+    KIND_CANNON, KIND_HORN, KIND_LIGHT, KIND_DECOR, KIND_SKI, KIND_TREAD, KIND_GYRO
 };
 
 #define PF_PAINT  0x01  /* tinted with the part's paint colour */
@@ -220,7 +220,7 @@ typedef struct {
     s32 numFloat;   f32 floaters[MAX_FLOAT][3];
     s32 numHull;    f32 hull[MAX_HULL][3];
     s32 numBalloons;f32 balloons[MAX_FLOAT][3];
-    s32 numSprings, numCannons, numHorns, numJets, numProps;
+    s32 numSprings, numCannons, numHorns, numJets, numProps, numGyros;
     f32 cannons[8][4];       /* pos xyz + yaw offset */
     s32 numCannonPos;
     s16 hp[MAX_PARTS];
@@ -253,6 +253,7 @@ typedef struct {
 extern NBVehicle nbVeh;
 extern NBBlueprint nbBlueprint;
 extern NBBlueprint nbSlots[NUM_SLOTS];
+void nb_slotsChanged(void);
 extern NBDebris nbDebris[MAX_DEBRIS];
 
 s32  vehicle_compile(NBVehicle *v, const NBBlueprint *bp);

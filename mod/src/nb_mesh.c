@@ -571,6 +571,34 @@ static void buildPart(s32 t) {
         mat(TEX_METAL, 1);
         boxf(-H, -H, H - 6, H, H, H, CELL, F_PX | F_NX | F_PY | F_NY);
         m->body = mb_end(s); break;
+    case 36: /* gyroscope: frame + spinning ring */
+        s = mb_begin(); mat(TEX_METAL, 0);
+        boxf(-H + 4, -H, -H + 4, H - 4, -H + 6, H - 4, CELL, F_ALL);
+        boxf(-3, -H + 6, -3, 3, H - 4, 3, CELL, F_ALL);
+        m->body = mb_end(s);
+        s = mb_begin(); mat(TEX_JIGGY, 0);
+        cylSide(2, 0, 2, 0, 15, 15, -4, 4, 12, 3, 0.25f);
+        cylSide(2, 0, 2, 0, 11, 11, 4, -4, 12, 3, 0.25f);
+        mat(TEX_HAZARD, 0);
+        boxf(-11, -1, -2, 11, 5, 2, CELL, F_ALL);
+        m->spin = mb_end(s);
+        v3_set(m->spinPivot, 0, 2, 0);
+        break;
+    case 37: /* small wing: 2x1 panel */
+        s = mb_begin(); mat(TEX_CANVAS, 1);
+        {
+            f32 xw = 2 * H, zf = H - 2, zb = -H + 2;
+            f32 p[4][3], uv[4][2];
+            center(0, 0, 0);
+            v3_set(p[0], -xw, 3, zb); v3_set(p[1], xw, 3, zb + 6); v3_set(p[2], xw, 3, zf - 8); v3_set(p[3], -xw, 3, zf);
+            uv[0][0] = 0; uv[0][1] = 0; uv[1][0] = 2; uv[1][1] = 0.15f; uv[2][0] = 2; uv[2][1] = 0.8f; uv[3][0] = 0; uv[3][1] = 1;
+            mb_poly(p, uv, 4, 0);
+            v3_set(p[0], -xw, -3, zb); v3_set(p[1], xw, -3, zb + 6); v3_set(p[2], xw, -3, zf - 8); v3_set(p[3], -xw, -3, zf);
+            mb_poly(p, uv, 4, 0);
+            mat(TEX_METAL, 1);
+            boxf(-xw, -3, zf - 3, xw, 3, zf, CELL, F_PZ | F_PY | F_NY);
+        }
+        m->body = mb_end(s); break;
     default:
         m->body = NULL;
         break;

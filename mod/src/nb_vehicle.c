@@ -65,7 +65,7 @@ s32 vehicle_compile(NBVehicle *v, const NBBlueprint *bp) {
     v->valid = FALSE;
     v->numWheels = v->numThrust = v->numWings = v->numFins = 0;
     v->numFloat = v->numHull = v->numBalloons = 0;
-    v->numSprings = v->numCannons = v->numHorns = v->numJets = v->numProps = 0;
+    v->numSprings = v->numCannons = v->numHorns = v->numJets = v->numProps = v->numGyros = 0;
     v->numCannonPos = 0;
     v->enginePower = 0;
     v->fuelMax = 0;
@@ -219,6 +219,7 @@ s32 vehicle_compile(NBVehicle *v, const NBBlueprint *bp) {
             }
             break;
         case KIND_SPRING: v->numSprings++; break;
+        case KIND_GYRO:   v->numGyros++; break;
         case KIND_HORN:   v->numHorns++; break;
         case KIND_CANNON:
             v->numCannons++;
@@ -764,6 +765,14 @@ static void simulate(NBVehicle *v, f32 h, s32 doHull) {
                     v3_addScaled(sT, fwd, -v->ax[0][1] * v->inertia[2] * 4.0f);
                 }
             }
+        }
+        if (v->numGyros > 0) {
+            /* gyroscopes pull the vehicle back to level */
+            f32 corr[3], wup[3] = {0, 1, 0}, k = nb_clampf(v->numGyros * 9.0f, 0, 30.0f);
+            v3_cross(corr, up, wup);
+            v3_addScaled(sT, corr, v->inertia[0] * k);
+            v3_addScaled(sT, v->ax[0], -v3_dot(v->w, v->ax[0]) * v->inertia[0] * 2.0f);
+            v3_addScaled(sT, fwd, -v3_dot(v->w, fwd) * v->inertia[2] * 2.0f);
         }
         if (v->numBalloons || v->inWater) {
             /* gentle self-righting so blimps and boats stay upright */

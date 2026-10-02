@@ -117,9 +117,19 @@ static void finishGarage(s32 drive) {
     }
 }
 
+/* L/R walk the catalogue grouped by category */
 static void cycleType(s32 dir) {
     NBGarage *g = &nbGarage;
-    g->type = (g->type + dir + nbPartCount) % nbPartCount;
+    static u8 order[64];
+    static s32 n;
+    s32 i, c, pos = 0;
+    if (n == 0) {
+        for (c = 0; c < CAT_COUNT; c++)
+            for (i = 0; i < nbPartCount; i++)
+                if (nbPartDefs[i].category == c) order[n++] = i;
+    }
+    for (i = 0; i < n; i++) if (order[i] == g->type) pos = i;
+    g->type = order[(pos + dir + n) % n];
     g->color = nbPartDefs[g->type].defaultColor;
     gcsfx_playWithPitch(SFX_CE_PAUSEMENU_HOIP, 1.2f, 18000);
 }
@@ -259,6 +269,7 @@ static void menuUpdate(void) {
         break;
     case MENU_SAVE:
         nbSlots[g->menuSaveSlot] = nbBlueprint;
+        nb_slotsChanged();
         nb_message("SAVED UNTIL POWER OFF", 1.8f);
         gcsfx_playWithPitch(SFX_C9_PAUSEMENU_ENTER, 1.0f, 24000);
         g->menu = FALSE;

@@ -25,7 +25,12 @@ SECTIONS
         . = ALIGN(16);
         __bss_end = .;
     }
-    ASSERT(__bss_end < 0x80800000, "mod does not fit in Expansion Pak RAM")
+    /* survives a console reset: the loader doesn't clear it */
+    .noinit (NOLOAD) : ALIGN(16) {
+        *(.noinit .noinit.*)
+        . = ALIGN(16);
+    }
+    ASSERT(. < 0x80800000, "mod does not fit in Expansion Pak RAM")
 
     /DISCARD/ : {
         *(.MIPS.*) *(.comment) *(.mdebug*) *(.pdr) *(.reginfo) *(.eh_frame) *(.gnu.attributes) *(.note*)

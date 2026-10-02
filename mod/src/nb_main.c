@@ -38,7 +38,23 @@ NBHeader nbHeader __attribute__((section(".nbheader"), used)) = {
 s32 nbMode;
 NBInput nbIn;
 NBBlueprint nbBlueprint;
-NBBlueprint nbSlots[NUM_SLOTS];
+/* Not zeroed by the loader, so saved blueprints survive the Reset button
+ * (RDRAM keeps its contents until the power goes off). */
+NBBlueprint nbSlots[NUM_SLOTS] __attribute__((section(".noinit")));
+static u32 sSlotsMagic __attribute__((section(".noinit")));
+static u32 sSlotsSum __attribute__((section(".noinit")));
+
+static u32 slotsChecksum(void) {
+    const u8 *p = (const u8 *)nbSlots;
+    u32 i, sum = 0x1234567;
+    for (i = 0; i < sizeof(nbSlots); i++) sum = (sum << 5) + (sum >> 27) + p[i];
+    return sum;
+}
+
+void nb_slotsChanged(void) {
+    sSlotsMagic = 0x534C4F54;
+    sSlotsSum = slotsChecksum();
+}
 f32 nbMessageTimer;
 char nbMessage[40];
 f32 nbCamPos[3], nbCamRot[3];
@@ -59,7 +75,10 @@ static void nb_init(void) {
     mesh_buildAll();
     nbMode = MODE_NORMAL;
     preset_build(0, &nbBlueprint);
-    for (i = 0; i < NUM_SLOTS; i++) bp_clear(&nbSlots[i]);
+    if (sSlotsMagic != 0x534C4F54 || sSlotsSum != slotsChecksum()) {
+        for (i = 0; i < NUM_SLOTS; i++) bp_clear(&nbSlots[i]);
+        nb_slotsChanged();
+    }
     nbVeh.active = FALSE;
 #ifdef NB_UNLOCK_ALL
     nbSandbox = TRUE;

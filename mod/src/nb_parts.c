@@ -56,6 +56,8 @@ const NBPartDef nbPartDefs[] = {
     {"CHECKER FLAG",    CAT_DECOR,  KIND_DECOR,   1, 2, 1, 0,                   0,  0,  0.3f,  10,  0},
     {"EXHAUST PIPE",    CAT_DECOR,  KIND_DECOR,   1, 1, 1, 0,                   0,  0,  0.5f,  20,  0},
     {"FRONT GRILLE",    CAT_DECOR,  KIND_DECOR,   1, 1, 1, PF_PAINT,            0,  0,  1.0f,  30,  0},
+    {"GYROSCOPE",       CAT_GADGET, KIND_GYRO,    1, 1, 1, PF_SPIN_Z,           3,  0,  2.0f,  40, 1.0f},
+    {"SMALL WING",      CAT_FLIGHT, KIND_WING,    2, 1, 1, PF_PAINT,            5,  6,  1.5f,  25, 2.5f},
 };
 const s32 nbPartCount = sizeof(nbPartDefs) / sizeof(nbPartDefs[0]);
 
