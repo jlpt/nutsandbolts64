@@ -20,10 +20,11 @@ you supply your own Banjo-Kazooie ROM at build time.
 - **Garage editor**: 15 × 8 × 15 build grid, a camera-relative cursor, layers,
   part rotation, ten paint colours, a ghost preview (green = fits, red = blocked),
   and a live weight/power/fuel readout.
-- **36 parts in 6 categories** (see the table below), including multi-cell parts like
+- **38 parts in 6 categories** (see the table below), including multi-cell parts like
   big wheels, wings and girders.
 - **6 preset vehicles**: Trolley, Kazooie Kart, Glider, Boat, Balloon Bus and
-  Monster Truck. There are also 3 save slots, which last until you power off.
+  Monster Truck. There are also 3 save slots, which survive the Reset button
+  but not a power-off.
 - **Physics**:
   - raycast wheel suspension and tyre grip against the game's own collision
   - steering, impulse-based body collisions and engine power vs. weight
@@ -79,8 +80,8 @@ you supply your own Banjo-Kazooie ROM at build time.
 | Body | Wood Block, Metal Block, Wood Wedge, Metal Wedge, Wood Slab, Long Plank, Metal Girder, Glass Block, Honeycomb Block, Jiggy Block, Rubber Bumper |
 | Wheels | Small Wheel, Big Wheel, Monster Wheel, Ski, Tank Tread |
 | Power | Small Engine, Big Engine, Fuel Can, Fuel Tank, Seat |
-| Flight | Propeller, Jet Booster, Wing, Tail Fin, Floater, Balloon |
-| Gadgets | Shock Spring, Egg Cannon, Horn, Headlight |
+| Flight | Propeller, Jet Booster, Wing, Small Wing, Tail Fin, Floater, Balloon |
+| Gadgets | Shock Spring, Egg Cannon, Gyroscope, Horn, Headlight |
 | Decor | Mumbo Skull, Music Note, Checker Flag, Exhaust Pipe, Front Grille |
 
 **Building rules**
@@ -88,7 +89,7 @@ you supply your own Banjo-Kazooie ROM at build time.
 - Parts that end up disconnected from the seat are left behind when you drive off.
 - Engines drive the wheels and need fuel. Propellers and jets push in the direction
   they face, so rotate them with **Z**.
-- Wings give lift once you're moving fast.
+- Wings give lift once you're moving fast, and Gyroscopes keep you upright.
 - Floaters keep you on water. Balloons lift you, and B vents them.
 
 Parts unlock at 0–10 Jiggies. Turn on **PARTS: ALL (SANDBOX)** in the garage menu to use everything straight away,
@@ -182,9 +183,10 @@ tests/physics_sim.c         physics test suite against a synthetic world
 
 ## Known limitations
 
-- 36 parts, not Nuts & Bolts' 1,600+ variants. The catalogue is a table in
+- 38 parts, not Nuts & Bolts' 1,600+ variants. The catalogue is a table in
   `mod/src/nb_parts.c`, and models are a `case` in `mod/src/nb_mesh.c`, so it's easy to extend.
 - Blueprint save slots live in RAM only: Banjo-Kazooie's EEPROM is full with its own saves.
+  They survive the Reset button but not a power-off.
 - Your vehicle has no collision with Banjo or enemies (it collides with the world).
 - Cutscenes, the Jiggy dance and taking damage pop Banjo out of the vehicle so the game can
   run its own logic.
