@@ -1,0 +1,9 @@
+# ROMs are copyrighted - never commit them
+*.z64
+*.n64
+*.v64
+baserom*
+
+build/
+__pycache__/
+*.o

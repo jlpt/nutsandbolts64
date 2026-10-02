@@ -1,0 +1,217 @@
+diff --git a/Makefile b/Makefile
+index 5a19ed4..76aac55 100644
+--- a/Makefile
++++ b/Makefile
+@@ -209,6 +209,7 @@ endef
+ # Build tool flags
+ CFLAGS         := -c -Wab,-r4300_mul -non_shared -G 0 -Xcpluscomm $(OPT_FLAGS) $(MIPSBIT) -D_FINALROM -DF3DEX_GBI -DVERSION='$(C_VERSION)' -DNDEBUG -DBUILD_VERSION=VERSION_I -DBKDIFFS -DANTI_TAMPER='$(ANTI_TAMPER)' -DANTI_PIRACY='$(ANTI_PIRACY)'
+ CFLAGS         += -woff 649,654,838,807
++CFLAGS         += $(NB_CFLAGS)
+ CPPFLAGS       := -D_FINALROM -DN_MICRO -DNDEBUG -DBUILD_VERSION=VERSION_I -DBKDIFFS
+ INCLUDE_CFLAGS := -I . -I include -I lib/ultralib/include -I lib/ultralib/include/PR -I lib/ultralib/include/PRinternal -I lib/ultralib/include/compiler/ido -I include/n_audio/PR -I lib/ultralib/src/audio
+ OPT_FLAGS      := -O2
+diff --git a/include/nbhooks.h b/include/nbhooks.h
+new file mode 100644
+index 0000000..2b76ea5
+--- /dev/null
++++ b/include/nbhooks.h
+@@ -0,0 +1,46 @@
++#ifndef __NBHOOKS_H__
++#define __NBHOOKS_H__
++
++/*
++ * Nuts & Bolts 64 mod interface.
++ *
++ * The mod is a separate binary that lives in the Expansion Pak region
++ * (0x80400000) and is DMA'd from ROM offset NB_ROM_OFFSET at boot.
++ * The first bytes of the mod image are an NBHeader with function pointers
++ * the game calls into. The original game's memory map is left untouched.
++ */
++
++#include <ultra64.h>
++
++#define NB_MAGIC        0x4E423634 /* 'NB64' */
++#define NB_ROM_OFFSET   0x01000000
++#define NB_RAM_BASE     0x80400000
++#define NB_HEADER_SIZE  0x40
++
++typedef struct {
++    u32 magic;
++    u32 version;
++    u32 load_size;   /* bytes to DMA (text + data), multiple of 8 */
++    u8 *bss_start;
++    u8 *bss_end;
++    void (*init)(void);
++    void (*update)(void);
++    void (*draw_world)(Gfx **gfx, Mtx **mtx, Vtx **vtx);
++    void (*draw_hud)(Gfx **gfx, Mtx **mtx, Vtx **vtx);
++    s32  (*block_pause)(void);
++    void (*map_unload)(void);
++    u32 pad[5];
++} NBHeader;
++
++#define NB_HEADER ((NBHeader *)NB_RAM_BASE)
++
++extern s32 gNBLoaded;
++
++void nbhook_load(void);
++void nbhook_update(void);
++void nbhook_drawWorld(Gfx **gfx, Mtx **mtx, Vtx **vtx);
++void nbhook_drawHud(Gfx **gfx, Mtx **mtx, Vtx **vtx);
++s32  nbhook_blockPause(void);
++void nbhook_mapUnload(void);
++
++#endif
+diff --git a/src/core1/code_0.c b/src/core1/code_0.c
+index 3c194d3..1f62b7f 100644
+--- a/src/core1/code_0.c
++++ b/src/core1/code_0.c
+@@ -5,6 +5,8 @@
+ #include "functions.h"
+ #include "variables.h"
+ #include "version.h"
++#include "nbhooks.h"
++#include "core1/parallel.h"
+ 
+ s32 D_80275610 = 0; // always set to 0
+ s32 D_80275614 = 0;
+@@ -127,7 +129,11 @@ enum map_e getSpecialBootMap(void) {
+ }
+ 
+ enum map_e getDefaultBootMap(void) {
++#ifdef NB_TEST_BOOTMAP
++    return NB_TEST_BOOTMAP; /* test builds only: boot straight into a level */
++#else
+     return MAP_1F_CS_START_RAREWARE;
++#endif
+ }
+ 
+ void func_8023DBAC(void) {
+@@ -160,6 +166,7 @@ void core1_init(void) {
+     audioManager_init();
+     graphicsCache_init();
+     ml_init();
++    nbhook_load();
+     gctransition_reset();
+     D_8027A130 = 0;
+     gGlobalTimer = 0;
+@@ -291,3 +298,49 @@ OSThread *mainThread_get(void) {
+ void disableInput_set(void) {
+     sDisableInput = TRUE;
+ }
++
++/* Nuts & Bolts 64: load the mod image from ROM into Expansion Pak RAM. */
++s32 gNBLoaded = FALSE;
++
++void nbhook_load(void) {
++    NBHeader *hdr = NB_HEADER;
++
++    gNBLoaded = FALSE;
++    if (osMemSize < 0x800000) {
++        return; /* no Expansion Pak, the mod stays disabled */
++    }
++    parallel_readDMA(hdr, NB_ROM_OFFSET, NB_HEADER_SIZE);
++    osInvalDCache(hdr, NB_HEADER_SIZE);
++    if (hdr->magic != NB_MAGIC || hdr->load_size < NB_HEADER_SIZE || hdr->load_size > 0x300000) {
++        return;
++    }
++    parallel_readDMA(hdr, NB_ROM_OFFSET, hdr->load_size);
++    osInvalDCache(hdr, hdr->load_size);
++    osInvalICache(hdr, hdr->load_size);
++    if (hdr->bss_end > hdr->bss_start) {
++        bzero(hdr->bss_start, hdr->bss_end - hdr->bss_start);
++        osWritebackDCache(hdr->bss_start, hdr->bss_end - hdr->bss_start);
++    }
++    gNBLoaded = TRUE;
++    hdr->init();
++}
++
++void nbhook_update(void) {
++    if (gNBLoaded) NB_HEADER->update();
++}
++
++void nbhook_drawWorld(Gfx **gfx, Mtx **mtx, Vtx **vtx) {
++    if (gNBLoaded) NB_HEADER->draw_world(gfx, mtx, vtx);
++}
++
++void nbhook_drawHud(Gfx **gfx, Mtx **mtx, Vtx **vtx) {
++    if (gNBLoaded) NB_HEADER->draw_hud(gfx, mtx, vtx);
++}
++
++s32 nbhook_blockPause(void) {
++    return gNBLoaded ? NB_HEADER->block_pause() : FALSE;
++}
++
++void nbhook_mapUnload(void) {
++    if (gNBLoaded) NB_HEADER->map_unload();
++}
+diff --git a/src/core2/code_5C870.c b/src/core2/code_5C870.c
+index 411af64..225751e 100644
+--- a/src/core2/code_5C870.c
++++ b/src/core2/code_5C870.c
+@@ -5,6 +5,7 @@
+ 
+ #include "core2/gc/transition.h"
+ #include "time.h"
++#include "nbhooks.h"
+ 
+ extern void print_updateBoldLetterFontDelayedFreeing(void);
+ extern void func_802FA0F8(void);
+@@ -106,6 +107,7 @@ void game_loadMap(enum map_e map, s32 exit, s32 reset_on_load){
+ }
+ 
+ void func_802E398C(s32 arg0) {
++    nbhook_mapUnload();
+     gsworld_free();
+     func_8030ED0C();
+     coMusicPlayer_update();
+@@ -151,6 +153,7 @@ void func_802E39D0(Gfx **gfx, Mtx **mtx, Vtx **vtx, s32 framebuffer_idx, bool ar
+ 
+     if (!game_is_frozen()) {
+         itemPrint_draw(gfx, mtx, vtx);
++        nbhook_drawHud(gfx, mtx, vtx);
+     }
+ 
+     printbuffer_draw(gfx, mtx, vtx);
+@@ -517,6 +520,7 @@ bool game_update(void) {
+         sGameState.unk1A = 0;
+     }
+     sp1C = gsworld_update();
++    nbhook_update();
+     func_80321C34();
+     func_8030ED0C();
+     coMusicPlayer_update();
+@@ -546,6 +550,7 @@ bool game_update(void) {
+                 && volatileflag_func_8032056C()
+                 && levelSpecificFlags_validateCRC1()
+                 && volatileflag_stub2()
++                && !nbhook_blockPause()
+             ) {
+                 game_setMode(GAME_MODE_4_PAUSED, 0U);
+             } else if ((controller_getStartButton(0) == 1) && (sGameState.unk0 != 0)) {
+diff --git a/src/core2/gsworld.c b/src/core2/gsworld.c
+index d1b2f13..db9fe49 100644
+--- a/src/core2/gsworld.c
++++ b/src/core2/gsworld.c
+@@ -1,4 +1,5 @@
+ #include <ultra64.h>
++#include "nbhooks.h"
+ #include "core1/core1.h"
+ #include "functions.h"
+ #include "variables.h"
+@@ -54,6 +55,7 @@ void gsworld_draw(Gfx** gfx, Mtx **mtx, Vtx **vtx) {
+         }
+         if (!game_is_frozen()) {
+             player_draw(gfx, mtx, vtx);
++            nbhook_drawWorld(gfx, mtx, vtx);
+         }
+         if (!game_is_frozen()) {
+             func_80302C94(gfx, mtx, vtx);
+@@ -88,6 +90,7 @@ void gsworld_draw(Gfx** gfx, Mtx **mtx, Vtx **vtx) {
+         leveloverlay_drawCallback(gfx, mtx, vtx);
+         func_8034F6F0(gfx, mtx, vtx);
+         player_draw(gfx, mtx, vtx);
++        nbhook_drawWorld(gfx, mtx, vtx);
+         func_80302C94(gfx, mtx, vtx);
+         core2_A5BC0_drawUnknownMarkers(gfx, mtx, vtx);
+         jiggylist_draw(gfx, mtx, vtx);
