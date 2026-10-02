@@ -78,6 +78,7 @@ typedef struct {
     NBPart parts[MAX_PARTS];
 } NBBlueprint;
 
+extern u32 nbBlueprintRev;       /* bumped on every blueprint edit */
 void bp_clear(NBBlueprint *bp);
 void bp_partExtent(const NBPart *p, s32 *sx, s32 *sy, s32 *sz);
 s32  bp_findAt(const NBBlueprint *bp, s32 x, s32 y, s32 z);
@@ -104,6 +105,7 @@ extern Gfx *nbCursorDL;
 extern Gfx *nbPadDL;
 extern Gfx *nbShadowDL;
 void mesh_buildAll(void);
+void mesh_stats(s32 *vtxUsed, s32 *vtxMax, s32 *gfxUsed, s32 *gfxMax);
 
 /* ---- math ---- */
 #define NB_PI 3.14159265f

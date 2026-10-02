@@ -646,6 +646,11 @@ static void buildShadow(void) {
     nbShadowDL = mb_end(s);
 }
 
+void mesh_stats(s32 *vtxUsed, s32 *vtxMax, s32 *gfxUsed, s32 *gfxMax) {
+    *vtxUsed = sVtxUsed; *vtxMax = VTX_POOL;
+    *gfxUsed = sGfxUsed; *gfxMax = GFX_POOL;
+}
+
 void mesh_buildAll(void) {
     s32 i;
     v3_set(sLight, 0.35f, 0.85f, 0.40f);

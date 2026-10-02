@@ -61,8 +61,11 @@ const s32 nbPartCount = sizeof(nbPartDefs) / sizeof(nbPartDefs[0]);
 
 /* ------------------------------------------------------------------ */
 
+u32 nbBlueprintRev;
+
 void bp_clear(NBBlueprint *bp) {
     bp->count = 0;
+    nbBlueprintRev++;
 }
 
 void bp_partExtent(const NBPart *p, s32 *sx, s32 *sy, s32 *sz) {
@@ -123,6 +126,7 @@ s32 bp_add(NBBlueprint *bp, s32 type, s32 x, s32 y, s32 z, s32 rot, s32 color) {
     if (bp_canPlace(bp, type, x, y, z, rot) != 1) return -1;
     p = &bp->parts[bp->count];
     p->type = type; p->x = x; p->y = y; p->z = z; p->rot = rot; p->color = color;
+    nbBlueprintRev++;
     return bp->count++;
 }
 
@@ -131,6 +135,7 @@ void bp_remove(NBBlueprint *bp, s32 index) {
     if (index < 0 || index >= bp->count) return;
     for (i = index; i < bp->count - 1; i++) bp->parts[i] = bp->parts[i + 1];
     bp->count--;
+    nbBlueprintRev++;
 }
 
 /* centre of the occupied cells in blueprint units (cell x is centred at x*CELL,

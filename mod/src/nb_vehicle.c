@@ -945,6 +945,7 @@ void vehicle_step(NBVehicle *v, f32 dt) {
     if (v->driving && v->fuelMax > 0) {
         f32 use = nb_absf(v->throttle) * (v->enginePower * 1.2f + v->numProps * 0.8f);
         if (nbIn.held & BTN_Z) use += v->numJets * 9.0f;
+        if (v->fuel > 0 && v->fuel - use * dt <= 0) nb_message("OUT OF FUEL! D-DOWN: GARAGE", 2.5f);
         v->fuel -= use * dt;
         if (v->fuel < 0) v->fuel = 0;
     }

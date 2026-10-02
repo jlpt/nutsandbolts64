@@ -241,7 +241,18 @@ static void drawGarage(void) {
     ghost.type = g->type; ghost.rot = g->rot; ghost.x = g->cx; ghost.y = g->cy; ghost.z = g->cz;
     bp_partExtent(&ghost, &sx, &sy, &sz);
     bp_partCenter(&ghost, c);
-    ok = nb_partUnlocked(g->type) && bp_canPlace(&nbBlueprint, g->type, g->cx, g->cy, g->cz, g->rot) == 1;
+    {
+        /* placement check is O(parts x cells): only redo it when something changed */
+        static u32 lastRev = 0xFFFFFFFF;
+        static s32 lastKey = -1, lastOk;
+        s32 key = (((g->cx + 8) * 16 + (g->cz + 8)) * 16 + g->cy) * 256 + g->type * 4 + g->rot;
+        if (key != lastKey || lastRev != nbBlueprintRev) {
+            lastOk = nb_partUnlocked(g->type) && bp_canPlace(&nbBlueprint, g->type, g->cx, g->cy, g->cz, g->rot) == 1;
+            lastKey = key;
+            lastRev = nbBlueprintRev;
+        }
+        ok = lastOk;
+    }
     a = (u8)(120 + 60 * sinf(g->blink * 6.0f));
     drawPartAt(&f, g->type, g->rot, g->color, c, g->blink * 3.0f, 0, 0, a, 1.0f);
 

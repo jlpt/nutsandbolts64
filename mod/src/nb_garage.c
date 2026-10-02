@@ -244,6 +244,7 @@ static void menuUpdate(void) {
                 break;
             }
             nbBlueprint = nbSlots[g->menuBlueprint];
+            nbBlueprintRev++;
         } else {
             if (presetLocked(g->menuBlueprint - NUM_SLOTS)) {
                 nb_message("COLLECT MORE JIGGIES FIRST!", 1.8f);
