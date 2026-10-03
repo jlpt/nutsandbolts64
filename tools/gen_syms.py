@@ -19,7 +19,9 @@ def main():
         parts = line.split()
         if len(parts) != 3:
             continue
-        addr, kind, name = int(parts[0], 16), parts[1], parts[2]
+        # some binutils builds (e.g. Ubuntu 22.04's) print 32-bit MIPS addresses
+        # sign-extended to 64 bits (ffffffff80263b40), so keep the low 32 bits
+        addr, kind, name = int(parts[0], 16) & 0xFFFFFFFF, parts[1], parts[2]
         syms.setdefault(name, set()).add((addr, kind))
 
     core2_end = max(a for a, _ in syms.get("core2_VRAM_END", {(0x80386460, "T")}))
@@ -43,6 +45,9 @@ def main():
         for name in sorted(keep):
             f.write("PROVIDE(%s = 0x%08X);\n" % (name, keep[name]))
     print("exported %d symbols" % len(keep))
+    if len(keep) < 1000:
+        sys.exit("error: only %d symbols found in %s - the mod can't link against that. "
+                 "Is the decomp build complete?" % (len(keep), elf))
 
 
 if __name__ == "__main__":
